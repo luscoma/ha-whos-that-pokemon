@@ -12,8 +12,8 @@ const TYPE_COLORS = {
 };
 
 const DEFAULT_QUESTION = "Who's that Pokémon?";
-const LAYOUTS = ["auto", "quadrant", "half", "full"];
-const CARD_VERSION = "0.2.2";
+const LAYOUTS = ["auto", "quadrant", "half", "vertical", "full"];
+const CARD_VERSION = "0.3.0";
 
 class WhosThatPokemonCard extends HTMLElement {
   constructor() {
@@ -28,7 +28,7 @@ class WhosThatPokemonCard extends HTMLElement {
       throw new Error("You need to define an entity (e.g. sensor.pokemon_of_the_day)");
     }
     const layout = LAYOUTS.includes(config.layout) ? config.layout : "auto";
-    this._config = { ...config, layout };
+    this._config = { ...config, layout, allow_reset: config.allow_reset ?? false };
     this._renderSkeleton();
     this._applyLayout();
     this._update();
@@ -45,6 +45,7 @@ class WhosThatPokemonCard extends HTMLElement {
     const layout = this._config?.layout || "auto";
     if (layout === "quadrant") return 2;
     if (layout === "half") return 3;
+    if (layout === "vertical") return 6;
     return 5;
   }
 
@@ -56,10 +57,12 @@ class WhosThatPokemonCard extends HTMLElement {
     if (layout === "half") {
       return { grid_columns: 4, grid_rows: 3, grid_min_columns: 3, grid_min_rows: 2 };
     }
+    if (layout === "vertical") {
+      return { grid_columns: 3, grid_rows: 5, grid_min_columns: 2, grid_min_rows: 4 };
+    }
     if (layout === "full") {
       return { grid_columns: 12, grid_rows: 4, grid_min_columns: 6, grid_min_rows: 3 };
     }
-    // auto: let HA pick, but set sensible minimum
     return { grid_min_columns: 2, grid_min_rows: 2 };
   }
 
@@ -85,6 +88,7 @@ class WhosThatPokemonCard extends HTMLElement {
               <img class="art" alt="" draggable="false" />
               <div class="flash"></div>
               <div class="tap-hint">Tap to reveal</div>
+              <div class="reset-hint">Double-click to hide</div>
             </div>
             <div class="title-bar">
               <svg class="pokeball" viewBox="0 0 32 32" aria-hidden="true">
@@ -102,9 +106,9 @@ class WhosThatPokemonCard extends HTMLElement {
         </div>
       </ha-card>
     `;
-    this.shadowRoot
-      .querySelector(".art-frame")
-      .addEventListener("click", () => this._toggleReveal());
+    const frame = this.shadowRoot.querySelector(".art-frame");
+    frame.addEventListener("click", () => this._toggleReveal());
+    frame.addEventListener("dblclick", () => this._resetReveal());
     this._renderedOnce = true;
   }
 
@@ -112,6 +116,11 @@ class WhosThatPokemonCard extends HTMLElement {
     const wrap = this.shadowRoot?.querySelector(".wrap");
     if (!wrap || !this._config) return;
     wrap.dataset.layout = this._config.layout;
+    // Propagate allow_reset to the art-frame as a class so CSS can show the hint.
+    const frame = this.shadowRoot.querySelector(".art-frame");
+    if (frame) {
+      frame.classList.toggle("allow-reset", !!this._config.allow_reset);
+    }
   }
 
   _css() {
@@ -183,18 +192,21 @@ class WhosThatPokemonCard extends HTMLElement {
         100% { opacity: 0; }
       }
 
-      .tap-hint {
+      .tap-hint, .reset-hint {
         position: absolute;
         bottom: 6px;
         right: 10px;
         font-size: 0.65rem;
         letter-spacing: 0.05em;
         text-transform: uppercase;
-        opacity: 0.5;
+        opacity: 0;
         pointer-events: none;
         transition: opacity 300ms ease-out;
       }
-      .revealed .tap-hint { opacity: 0; }
+      /* Show "Tap to reveal" only when unrevealed */
+      .art-frame:not(.revealed) .tap-hint { opacity: 0.5; }
+      /* Show "Double-click to hide" only when revealed + reset allowed */
+      .art-frame.revealed.allow-reset .reset-hint { opacity: 0.4; }
 
       .title-bar {
         display: flex;
@@ -262,7 +274,7 @@ class WhosThatPokemonCard extends HTMLElement {
       /* =============== AUTO LAYOUT (container queries) =============== */
       /* Default (below 320px): quadrant — only art + title bar visible. */
 
-      /* Half-V: single column, stats row below art */
+      /* Vertical: single column, stats row below art — also used by auto at 320–479px */
       @container (min-width: 320px) {
         .wrap[data-layout="auto"] .stats-col {
           display: flex;
@@ -271,6 +283,7 @@ class WhosThatPokemonCard extends HTMLElement {
           gap: 10px 16px;
         }
         .wrap[data-layout="auto"] .stat { flex: 1 1 120px; }
+        .wrap[data-layout="auto"] .stat.mid { display: flex; }
       }
 
       /* Half-H: two columns side by side */
@@ -300,6 +313,19 @@ class WhosThatPokemonCard extends HTMLElement {
       /* =============== FORCED LAYOUTS =============== */
       /* Quadrant: no stats, ever. */
       .wrap[data-layout="quadrant"] .stats-col { display: none; }
+
+      /* Vertical: single column, image top, stats in wrapping row below. */
+      .wrap[data-layout="vertical"] {
+        grid-template-columns: 1fr;
+      }
+      .wrap[data-layout="vertical"] .stats-col {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 10px 16px;
+      }
+      .wrap[data-layout="vertical"] .stat { flex: 1 1 120px; }
+      .wrap[data-layout="vertical"] .stat.mid { display: flex; }
 
       /* Half: side-by-side, mid stats on, abilities off. */
       .wrap[data-layout="half"] {
@@ -415,8 +441,7 @@ class WhosThatPokemonCard extends HTMLElement {
 
   _toggleReveal() {
     if (!this._hass || !this._config) return;
-    const root = this.shadowRoot;
-    const frame = root.querySelector(".art-frame");
+    const frame = this.shadowRoot.querySelector(".art-frame");
     if (frame.classList.contains("revealed")) return;
 
     frame.classList.add("revealing");
@@ -427,6 +452,17 @@ class WhosThatPokemonCard extends HTMLElement {
     } catch (_e) {
       /* localStorage may be unavailable (private mode) — reveal still works until reload */
     }
+    this._update();
+  }
+
+  _resetReveal() {
+    if (!this._config?.allow_reset) return;
+    const frame = this.shadowRoot.querySelector(".art-frame");
+    if (!frame.classList.contains("revealed")) return;
+
+    try {
+      localStorage.removeItem(this._storageKey);
+    } catch (_e) { /* ignore */ }
     this._update();
   }
 }
@@ -462,11 +498,14 @@ class WhosThatPokemonCardEditor extends HTMLElement {
       ? this._config.layout
       : "auto";
 
+    const currentAllowReset = this._config?.allow_reset ?? false;
+
     this.shadowRoot.innerHTML = `
       <style>
         .row { display: flex; flex-direction: column; gap: 4px; margin: 10px 0; }
+        .row-inline { display: flex; align-items: center; gap: 10px; margin: 10px 0; }
         label { font-size: 0.85rem; opacity: 0.75; }
-        select, input {
+        select, input[type="text"] {
           padding: 8px;
           font-size: 1rem;
           border-radius: 6px;
@@ -474,6 +513,7 @@ class WhosThatPokemonCardEditor extends HTMLElement {
           background: var(--card-background-color, #fff);
           color: var(--primary-text-color, #000);
         }
+        input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
         .hint { font-size: 0.75rem; opacity: 0.6; }
       </style>
       <div class="row">
@@ -493,7 +533,8 @@ class WhosThatPokemonCardEditor extends HTMLElement {
         <select id="layout">
           <option value="auto"${currentLayout === "auto" ? " selected" : ""}>Auto (responsive)</option>
           <option value="quadrant"${currentLayout === "quadrant" ? " selected" : ""}>Quadrant — art only</option>
-          <option value="half"${currentLayout === "half" ? " selected" : ""}>Half — art + key stats</option>
+          <option value="half"${currentLayout === "half" ? " selected" : ""}>Half — art + key stats side by side</option>
+          <option value="vertical"${currentLayout === "vertical" ? " selected" : ""}>Vertical — art on top, stats below</option>
           <option value="full"${currentLayout === "full" ? " selected" : ""}>Full — everything</option>
         </select>
         <div class="hint">Auto picks a layout based on the card's rendered width.</div>
@@ -501,6 +542,10 @@ class WhosThatPokemonCardEditor extends HTMLElement {
       <div class="row">
         <label for="q">Headline (optional)</label>
         <input id="q" type="text" value="${currentQuestion.replace(/"/g, "&quot;")}" placeholder="${DEFAULT_QUESTION}" />
+      </div>
+      <div class="row-inline">
+        <input type="checkbox" id="allow_reset" ${currentAllowReset ? "checked" : ""} />
+        <label for="allow_reset" style="opacity:1;">Allow double-click to hide again</label>
       </div>
     `;
     this.shadowRoot.getElementById("ent").addEventListener("change", (e) =>
@@ -511,6 +556,9 @@ class WhosThatPokemonCardEditor extends HTMLElement {
     );
     this.shadowRoot.getElementById("q").addEventListener("input", (e) =>
       this._emit("question", e.target.value),
+    );
+    this.shadowRoot.getElementById("allow_reset").addEventListener("change", (e) =>
+      this._emit("allow_reset", e.target.checked),
     );
   }
 
