@@ -13,7 +13,7 @@ const TYPE_COLORS = {
 
 const DEFAULT_QUESTION = "Who's that Pokémon?";
 const LAYOUTS = ["auto", "quadrant", "half", "vertical", "full"];
-const CARD_VERSION = "0.3.0";
+const CARD_VERSION = "1.0.3";
 
 class WhosThatPokemonCard extends HTMLElement {
   constructor() {
