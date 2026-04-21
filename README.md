@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="brand/icon.svg" width="140" alt="Who's That Pokémon? pokeball icon">
+  <img src="assets/icon.svg" width="140" alt="Who's That Pokémon? pokeball icon">
 </p>
 
 # Who's That Pokémon? — Home Assistant integration
@@ -18,6 +18,12 @@ day, shows it as a silhouette, and reveals it on tap. Inspired by
 - **Persistent daily state** — once revealed, it stays revealed until tomorrow
 - **Bundled Lovelace card** — auto-registered, no manual `resources:` edit needed
 - Powered by [PokéAPI](https://pokeapi.co)
+
+
+<div style="display: flex">
+  <img src="assets/hidden.png" width="250" alt="Who's That Pokémon? pokeball icon">
+  <img src="assets/revealed.png" width="250" alt="It's Minior!">
+</p>
 
 ## Install (via HACS)
 
