@@ -1,7 +1,7 @@
 # Who's That Pokémon? — Home Assistant integration
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
-[![GitHub release](https://img.shields.io/github/v/release/alexlusco/ha-whos-that-pokemon?display_name=tag&sort=semver)](https://github.com/alexlusco/ha-whos-that-pokemon/releases)
+[![GitHub release](https://img.shields.io/github/v/release/luscoma/ha-whos-that-pokemon?display_name=tag&sort=semver)](https://github.com/luscoma/ha-whos-that-pokemon/releases)
 
 A custom Home Assistant integration + Lovelace card that picks a Pokémon every
 day, shows it as a silhouette, and reveals it on tap. Inspired by
@@ -17,7 +17,7 @@ day, shows it as a silhouette, and reveals it on tap. Inspired by
 
 ## Install (via HACS)
 
-[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=alexlusco&repository=ha-whos-that-pokemon&category=integration)
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=luscoma&repository=ha-whos-that-pokemon&category=integration)
 
 Click the button above to add this repo to HACS in one step, or do it manually:
 
