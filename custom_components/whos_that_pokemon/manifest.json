@@ -1,12 +1,12 @@
 {
   "domain": "whos_that_pokemon",
   "name": "Who's That Pokémon?",
-  "codeowners": ["@alexlusco"],
+  "codeowners": ["@luscoma"],
   "config_flow": true,
-  "documentation": "https://github.com/alexlusco/ha-whos-that-pokemon",
+  "documentation": "https://github.com/luscoma/ha-whos-that-pokemon",
   "integration_type": "service",
   "iot_class": "cloud_polling",
-  "issue_tracker": "https://github.com/alexlusco/ha-whos-that-pokemon/issues",
+  "issue_tracker": "https://github.com/luscoma/ha-whos-that-pokemon/issues",
   "requirements": [],
-  "version": "0.2.0"
+  "version": "0.2.1"
 }
