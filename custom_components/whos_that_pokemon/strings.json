@@ -1,0 +1,34 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Who's That Pokémon?",
+        "description": "Pick which generation to draw from. A new Pokémon is chosen automatically every day at local midnight.",
+        "data": {
+          "generation": "Generation"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "Who's That Pokémon? is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Who's That Pokémon?",
+        "description": "Change which generation to draw from.",
+        "data": {
+          "generation": "Generation"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "pokemon_of_the_day": {
+        "name": "Pokémon of the Day"
+      }
+    }
+  }
+}
